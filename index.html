@@ -5,33 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Barrel Club Catch</title>
 <style>
-  body { margin:0; background:#1b120c; overflow:hidden; }
-  canvas { display:block; margin:auto; background:#1b120c; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #1b120c;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    margin: auto;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    background: #1b120c;
+  }
 
   #playAgain {
-    position:absolute; left:50%; top:65%; transform:translateX(-50%);
-    background:#d4af37; border:2px solid #3a2a1d; color:#1b120c;
-    font-family:Georgia,serif; font-size:20px; border-radius:12px;
-    padding:10px 25px; cursor:pointer;
-    opacity:0; transition:opacity 1s ease; pointer-events:none;
+    position: absolute;
+    left: 50%;
+    top: 65%;
+    transform: translateX(-50%);
+    background: #d4af37;
+    border: 2px solid #3a2a1d;
+    color: #1b120c;
+    font-family: Georgia, serif;
+    font-size: 20px;
+    border-radius: 12px;
+    padding: 10px 25px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
   }
+
   #playAgain.show {
-    opacity:1; pointer-events:auto;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Back button styling */
+  #backButton {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(212,175,55,0.9);
+    border: 2px solid #3a2a1d;
+    color: #1b120c;
+    font-family: Georgia, serif;
+    font-size: 16px;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    z-index: 9999;
+    transition: background 0.3s ease;
+  }
+
+  #backButton:hover {
+    background: rgba(212,175,55,1);
   }
 </style>
 </head>
 <body>
+<button id="backButton" onclick="window.location.href='https://barrelclub.com'">← Back to Home</button>
 <canvas id="game" width="480" height="720"></canvas>
 <button id="playAgain">Play Again</button>
 
 <script>
 /*
 ============================================================
-Barrel Club Catch – Transparent Crate Edition
-Version 1.4 — November 2025
+Barrel Club Catch – Fullscreen Edition
+Version 1.5 — November 2025
 ============================================================
 */
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const btn = document.getElementById("playAgain");
@@ -40,7 +87,7 @@ let state = "start";
 let barrels = [], score = 0, misses = 0, caught = 0;
 const totalBarrels = 99;
 let spawnTimer = 0, spawnDelay = 1200, last = 0;
-const player = { x:200, y:630, w:100, h:80 };
+const player = { x: 200, y: 630, w: 100, h: 80 };
 
 // Load images
 const bg = new Image(); bg.src = "rickhouse-bg.png";
@@ -48,11 +95,10 @@ const barrelImg = new Image(); barrelImg.src = "barrel.png";
 const crateImg = new Image(); crateImg.src = "crate.png";
 let crateTex = null;
 
-// helper: removes near-white/checker pixels (in case PNG isn't truly transparent)
+// Make crate transparent fix
 function makeWhiteTransparent(image) {
   const w = image.naturalWidth, h = image.naturalHeight;
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
   const x = c.getContext('2d');
   x.drawImage(image, 0, 0);
   const img = x.getImageData(0, 0, w, h);
@@ -70,21 +116,21 @@ function makeWhiteTransparent(image) {
 crateImg.onload = () => { crateTex = makeWhiteTransparent(crateImg); };
 
 function drawStart(){
-  ctx.drawImage(bg,0,0,480,720);
+  ctx.drawImage(bg,0,0,canvas.width,canvas.height);
   ctx.fillStyle="rgba(0,0,0,0.6)";
-  ctx.fillRect(0,0,480,720);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle="#d4af37";
   ctx.font="48px Georgia";
   ctx.textAlign="center";
-  ctx.fillText("Barrel Club Catch",240,360);
+  ctx.fillText("Barrel Club Catch",canvas.width/2,canvas.height/2);
   ctx.font="22px Georgia";
-  ctx.fillText("Click or Tap to Start",240,410);
+  ctx.fillText("Click or Tap to Start",canvas.width/2,canvas.height/2+50);
   ctx.font="14px Georgia";
-  ctx.fillText("© 2025 Barrel Club Catch",240,700);
+  ctx.fillText("© 2025 Barrel Club Catch",canvas.width/2,canvas.height-20);
 }
 
 function spawn(){
-  barrels.push({x:Math.random()*400+20,y:-80,speed:2+Math.random()*2.5});
+  barrels.push({x:Math.random()*(canvas.width-80)+20,y:-80,speed:2+Math.random()*2.5});
 }
 
 function update(dt){
@@ -95,13 +141,13 @@ function update(dt){
     if(b.y+60>player.y && b.x+40>player.x && b.x<player.x+player.w){
       score+=10; caught++; if(caught>=totalBarrels) state="win"; return false;
     }
-    if(b.y>720){misses++; if(misses>=3) state="lose"; return false;}
+    if(b.y>canvas.height){misses++; if(misses>=3) state="lose"; return false;}
     return true;
   });
 }
 
 function draw(){
-  ctx.drawImage(bg,0,0,480,720);
+  ctx.drawImage(bg,0,0,canvas.width,canvas.height);
   barrels.forEach(b=>ctx.drawImage(barrelImg,b.x,b.y,60,60));
   ctx.drawImage(crateTex || crateImg, player.x, player.y, player.w, player.h);
   ctx.fillStyle="#f5deb3"; ctx.font="24px Georgia";
@@ -111,16 +157,16 @@ function draw(){
 function drawOverlay(type){
   const overlayColor=type==="win"?"rgba(0,0,0,0.6)":"rgba(0,0,0,0.75)";
   ctx.fillStyle=overlayColor;
-  ctx.fillRect(0,0,480,720);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle="#f5deb3"; ctx.textAlign="center";
 
   if(type==="win"){
-    ctx.font="36px Georgia"; ctx.fillText("🎉 You Won! 🎉",240,320);
-    ctx.font="22px Georgia"; ctx.fillText("Here’s your secret code:",240,360);
-    ctx.font="30px Georgia"; ctx.fillText("077340",240,400);
+    ctx.font="36px Georgia"; ctx.fillText("🎉 You Won! 🎉",canvas.width/2,canvas.height/2-20);
+    ctx.font="22px Georgia"; ctx.fillText("Here’s your secret code:",canvas.width/2,canvas.height/2+20);
+    ctx.font="30px Georgia"; ctx.fillText("077340",canvas.width/2,canvas.height/2+60);
   }else{
-    ctx.font="28px Georgia"; ctx.fillText("You dropped too many barrels!",240,360);
-    ctx.font="22px Georgia"; ctx.fillText("Score: "+score,240,400);
+    ctx.font="28px Georgia"; ctx.fillText("You dropped too many barrels!",canvas.width/2,canvas.height/2-10);
+    ctx.font="22px Georgia"; ctx.fillText("Score: "+score,canvas.width/2,canvas.height/2+30);
   }
   btn.classList.add("show");
 }
@@ -143,9 +189,17 @@ canvas.addEventListener("touchmove",e=>{
   player.x=t.clientX-r.left-player.w/2;
 });
 
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  player.y = canvas.height - 90;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
 function loop(ts){
   const dt=ts-last; last=ts;
-  ctx.clearRect(0,0,480,720);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   if(state==="start") drawStart();
   else if(state==="playing"){update(dt);draw();}
   else if(state==="win"||state==="lose"){draw();drawOverlay(state);}
